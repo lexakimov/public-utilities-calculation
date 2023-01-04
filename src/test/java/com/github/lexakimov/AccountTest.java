@@ -29,14 +29,14 @@ class AccountTest {
         assertThat(billPositions, hasSize(2));
 
         {
-            BillPosition billPosition = billPositions.get(0);
-            assertThat(billPosition.date(), equalTo(accountOpeningDate));
-            assertThat(billPosition.meterReading(), equalTo(0));
-            assertThat(billPosition.consumptionVolume(), equalTo(0));
-            assertThat(billPosition.rate(), comparesEqualTo(BigDecimal.TEN));
-            assertThat(billPosition.cost(), comparesEqualTo(BigDecimal.ZERO));
-            assertThat(billPosition.accountBalance(), comparesEqualTo(BigDecimal.ZERO));
-            assertThat(billPosition.accountDebt(), comparesEqualTo(BigDecimal.ZERO));
+            AccountPosition accountPosition = billPositions.get(0);
+            assertThat(accountPosition.date(), equalTo(accountOpeningDate));
+            assertThat(accountPosition.meterReading(), equalTo(0));
+            assertThat(accountPosition.consumptionVolume(), equalTo(0));
+            assertThat(accountPosition.rate(), comparesEqualTo(BigDecimal.TEN));
+            assertThat(accountPosition.cost(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(accountPosition.accountBalance(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(accountPosition.accountDebt(), comparesEqualTo(BigDecimal.ZERO));
         }
 
         {
@@ -71,14 +71,14 @@ class AccountTest {
         assertThat(billPositions, hasSize(3));
 
         {
-            BillPosition billPosition = billPositions.get(0);
-            assertThat(billPosition.date(), equalTo(accountOpeningDate));
-            assertThat(billPosition.meterReading(), equalTo(0));
-            assertThat(billPosition.consumptionVolume(), equalTo(0));
-            assertThat(billPosition.rate(), comparesEqualTo(BigDecimal.TEN));
-            assertThat(billPosition.cost(), comparesEqualTo(BigDecimal.ZERO));
-            assertThat(billPosition.accountBalance(), comparesEqualTo(BigDecimal.ZERO));
-            assertThat(billPosition.accountDebt(), comparesEqualTo(BigDecimal.ZERO));
+            AccountPosition accountPosition = billPositions.get(0);
+            assertThat(accountPosition.date(), equalTo(accountOpeningDate));
+            assertThat(accountPosition.meterReading(), equalTo(0));
+            assertThat(accountPosition.consumptionVolume(), equalTo(0));
+            assertThat(accountPosition.rate(), comparesEqualTo(BigDecimal.TEN));
+            assertThat(accountPosition.cost(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(accountPosition.accountBalance(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(accountPosition.accountDebt(), comparesEqualTo(BigDecimal.ZERO));
         }
 
         {

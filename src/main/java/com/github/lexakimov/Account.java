@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
+import static com.github.lexakimov.AccountPositionType.ENTERING_METER_READINGS;
+import static com.github.lexakimov.AccountPositionType.OPENING_AN_ACCOUNT;
 
 /**
  * @author akimov
@@ -14,7 +16,7 @@ import java.util.TreeMap;
  */
 public class Account {
 
-    private final TreeMap<LocalDate, BillPosition> results = new TreeMap<>();
+    private final TreeMap<LocalDate, AccountPosition> positions = new TreeMap<>();
 
     private final LocalDate accountOpeningDate;
     private final RateManager rateManager;
@@ -43,11 +45,11 @@ public class Account {
     public void calculateUntil(LocalDate settlementDate) {
         List<LocalDate> dates = getMilestones(settlementDate);
 
-        BillPosition position = null;
+        AccountPosition position = null;
 
         for (LocalDate date : dates) {
             position = (position == null) ? calcInitialPosition(date) : calcPosition(date, position);
-            results.put(date, position);
+            positions.put(date, position);
         }
     }
 
@@ -68,7 +70,7 @@ public class Account {
         return dates;
     }
 
-    private BillPosition calcInitialPosition(LocalDate date) {
+    private AccountPosition calcInitialPosition(LocalDate date) {
         var rate = rateManager.getRateFor(date);
         var balance = paymentManager.getInitialAccountBalance();
         var meterReading = meterReadingManager.getInitialMeterReading();
@@ -76,10 +78,10 @@ public class Account {
         var cost = BigDecimal.ZERO;
         var debt = BigDecimal.ZERO;
 
-        return new BillPosition(date, meterReading, false, consumed, rate, cost, balance, debt);
+        return new AccountPosition(date, meterReading, false, OPENING_AN_ACCOUNT, consumed, rate, cost, balance, debt);
     }
 
-    private BillPosition calcPosition(LocalDate date, BillPosition prevPosition) {
+    private AccountPosition calcPosition(LocalDate date, AccountPosition prevPosition) {
         var rate = rateManager.getRateFor(date);
         var balance = prevPosition.accountDebt();
         var isInterpolated = false;
@@ -92,10 +94,11 @@ public class Account {
         var cost = rate.multiply(BigDecimal.valueOf(consumed));
         var debt = balance.subtract(cost);
 
-        return new BillPosition(date, meterReading, isInterpolated, consumed, rate, cost, balance, debt);
+        return new AccountPosition
+                (date, meterReading, isInterpolated, ENTERING_METER_READINGS, consumed, rate, cost, balance, debt);
     }
 
-    public List<BillPosition> getBillPositions() {
-        return results.values().stream().toList();
+    public List<AccountPosition> getBillPositions() {
+        return positions.values().stream().toList();
     }
 }

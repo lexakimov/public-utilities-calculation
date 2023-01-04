@@ -15,10 +15,11 @@ import java.time.LocalDate;
  * @author akimov
  * created at: 04.01.2023 07:43
  */
-public record BillPosition(
+public record AccountPosition(
         LocalDate date,
         Integer meterReading,
         boolean interpolated,
+        AccountPositionType type,
 
         Integer consumptionVolume,
         BigDecimal rate,
