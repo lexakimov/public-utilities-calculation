@@ -2,10 +2,11 @@ package com.github.lexakimov;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
-import static java.math.BigDecimal.ZERO;
 
 /**
  * @author akimov
@@ -37,39 +38,61 @@ public class Account {
     }
 
     /**
-     * @param date exclusive
+     * @param settlementDate inclusive
      */
-    public void calculateUntil(LocalDate date) {
-        var initialRate = rateManager.getRateFor(accountOpeningDate);
-        var initialBalance = paymentManager.getInitialAccountBalance();
-        var initialMeterReading = meterReadingManager.getInitialMeterReading();
-        var initialPosition = new BillPosition(
-                accountOpeningDate,
-                initialMeterReading,
-                false,
-                0,
-                initialRate,
-                ZERO,
-                initialBalance,
-                ZERO);
-        results.put(accountOpeningDate, initialPosition);
+    public void calculateUntil(LocalDate settlementDate) {
+        List<LocalDate> dates = getMilestones(settlementDate);
 
+        BillPosition position = null;
 
+        for (LocalDate date : dates) {
+            position = (position == null) ? calcInitialPosition(date) : calcPosition(date, position);
+            results.put(date, position);
+        }
+    }
+
+    private List<LocalDate> getMilestones(LocalDate date) {
+        List<LocalDate> dates = new ArrayList<>();
+        dates.add(accountOpeningDate);
+
+        var monthBetween = ChronoUnit.MONTHS.between(accountOpeningDate, date);
+        var currentDate = accountOpeningDate.withDayOfMonth(1);
+        for (long i = 0; i < monthBetween; i++) {
+            currentDate = currentDate.plusMonths(1);
+            dates.add(currentDate);
+        }
+        if (!date.isEqual(currentDate)) {
+            dates.add(date);
+        }
+
+        return dates;
+    }
+
+    private BillPosition calcInitialPosition(LocalDate date) {
         var rate = rateManager.getRateFor(date);
-        var balance = initialPosition.accountDebt();
+        var balance = paymentManager.getInitialAccountBalance();
+        var meterReading = meterReadingManager.getInitialMeterReading();
+        var consumed = 0;
+        var cost = BigDecimal.ZERO;
+        var debt = BigDecimal.ZERO;
 
-        boolean isInterpolated = false;
+        return new BillPosition(date, meterReading, false, consumed, rate, cost, balance, debt);
+    }
+
+    private BillPosition calcPosition(LocalDate date, BillPosition prevPosition) {
+        var rate = rateManager.getRateFor(date);
+        var balance = prevPosition.accountDebt();
+        var isInterpolated = false;
         var meterReading = meterReadingManager.getMeterReadingFor(date);
         if (meterReading == null) {
             isInterpolated = true;
             meterReading = meterReadingManager.getMeterReadingFor(date, true);
         }
-        var consumed = meterReading - initialMeterReading;
+        var consumed = meterReading - prevPosition.meterReading();
         var cost = rate.multiply(BigDecimal.valueOf(consumed));
         var debt = balance.subtract(cost);
 
-        var position = new BillPosition(date, meterReading, isInterpolated, consumed, rate, cost, balance, debt);
-        results.put(date, position);
+        return new BillPosition(date, meterReading, isInterpolated, consumed, rate, cost, balance, debt);
     }
 
     public List<BillPosition> getBillPositions() {
