@@ -16,6 +16,10 @@ public class RateManager {
 
     private final TreeMap<LocalDate, BigDecimal> rates = new TreeMap<>();
 
+    /**
+     * @param date start date of the rate.
+     * @param rate cost per month.
+     */
     public void addRate(LocalDate date, BigDecimal rate) {
         Objects.requireNonNull(date);
         Objects.requireNonNull(rate);
