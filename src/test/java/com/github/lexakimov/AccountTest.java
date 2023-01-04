@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.comparesEqualTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 
 class AccountTest {
 
@@ -25,7 +26,7 @@ class AccountTest {
         var settlementDate = LocalDate.of(2023, 2, 1);
         account.calculateUntil(settlementDate);
 
-        var billPositions = account.getBillPositions();
+        var billPositions = account.getPositions();
         assertThat(billPositions, hasSize(2));
 
         {
@@ -67,7 +68,7 @@ class AccountTest {
         var settlementDate = LocalDate.of(2023, 3, 1);
         account.calculateUntil(settlementDate);
 
-        var billPositions = account.getBillPositions();
+        var billPositions = account.getPositions();
         assertThat(billPositions, hasSize(3));
 
         {
@@ -101,6 +102,79 @@ class AccountTest {
             assertThat(billPosition.cost(), comparesEqualTo(BigDecimal.valueOf(100)));
             assertThat(billPosition.accountBalance(), comparesEqualTo(BigDecimal.valueOf(-100)));
             assertThat(billPosition.accountDebt(), comparesEqualTo(BigDecimal.valueOf(-200)));
+        }
+    }
+
+    @Test
+    void calculateFromScratchWithPayment_goodCase() {
+        var accountOpeningDate = LocalDate.of(2023, 1, 1);
+
+        var rateManager = new RateManager();
+        var paymentManager = new PaymentManager();
+        var meterReadingManager = new MeterReadingManager();
+        var account = new Account(accountOpeningDate, rateManager, paymentManager, meterReadingManager);
+
+        rateManager.addRate(LocalDate.of(2023, 1, 1), BigDecimal.TEN);
+        meterReadingManager.enterMeterReading(LocalDate.of(2023, 2, 1), 10);
+        meterReadingManager.enterMeterReading(LocalDate.of(2023, 3, 1), 20);
+        paymentManager.addPayment(LocalDate.of(2023, 2, 1), BigDecimal.valueOf(70));
+
+        var settlementDate = LocalDate.of(2023, 3, 1);
+        account.calculateUntil(settlementDate);
+
+        var positions = account.getPositions();
+        assertThat(positions, hasSize(4));
+
+        {
+            var position = positions.get(0);
+            assertThat(position.date(), equalTo(accountOpeningDate));
+            assertThat(position.type(), equalTo(AccountPositionType.OPENING_AN_ACCOUNT));
+
+            assertThat(position.meterReading(), equalTo(0));
+            assertThat(position.consumptionVolume(), equalTo(0));
+            assertThat(position.rate(), comparesEqualTo(BigDecimal.TEN));
+            assertThat(position.cost(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(position.accountBalance(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(position.accountDebt(), comparesEqualTo(BigDecimal.ZERO));
+        }
+
+        {
+            var position = positions.get(1);
+            assertThat(position.date(), equalTo(LocalDate.of(2023, 2, 1)));
+            assertThat(position.type(), equalTo(AccountPositionType.ENTERING_METER_READINGS));
+
+            assertThat(position.meterReading(), equalTo(10));
+            assertThat(position.consumptionVolume(), equalTo(10));
+            assertThat(position.rate(), comparesEqualTo(BigDecimal.TEN));
+            assertThat(position.cost(), comparesEqualTo(BigDecimal.valueOf(100)));
+            assertThat(position.accountBalance(), comparesEqualTo(BigDecimal.ZERO));
+            assertThat(position.accountDebt(), comparesEqualTo(BigDecimal.valueOf(-100)));
+        }
+
+        {
+            var position = positions.get(2);
+            assertThat(position.date(), equalTo(LocalDate.of(2023, 2, 1)));
+            assertThat(position.type(), equalTo(AccountPositionType.PAYMENT));
+
+            assertThat(position.meterReading(), nullValue());
+            assertThat(position.consumptionVolume(), nullValue());
+            assertThat(position.rate(), nullValue());
+            assertThat(position.cost(), comparesEqualTo(BigDecimal.valueOf(-70)));
+            assertThat(position.accountBalance(), comparesEqualTo(BigDecimal.valueOf(-100)));
+            assertThat(position.accountDebt(), comparesEqualTo(BigDecimal.valueOf(-30)));
+        }
+
+        {
+            var position = positions.get(3);
+            assertThat(position.date(), equalTo(settlementDate));
+            assertThat(position.type(), equalTo(AccountPositionType.ENTERING_METER_READINGS));
+
+            assertThat(position.meterReading(), equalTo(20));
+            assertThat(position.consumptionVolume(), equalTo(10));
+            assertThat(position.rate(), comparesEqualTo(BigDecimal.TEN));
+            assertThat(position.cost(), comparesEqualTo(BigDecimal.valueOf(100)));
+            assertThat(position.accountBalance(), comparesEqualTo(BigDecimal.valueOf(-30)));
+            assertThat(position.accountDebt(), comparesEqualTo(BigDecimal.valueOf(-130)));
         }
     }
 

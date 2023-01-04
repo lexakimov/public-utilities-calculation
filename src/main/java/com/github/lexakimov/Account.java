@@ -98,7 +98,7 @@ public class Account {
                 (date, meterReading, isInterpolated, ENTERING_METER_READINGS, consumed, rate, cost, balance, debt);
     }
 
-    public List<AccountPosition> getBillPositions() {
+    public List<AccountPosition> getPositions() {
         return positions.values().stream().toList();
     }
 }

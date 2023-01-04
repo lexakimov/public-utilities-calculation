@@ -8,7 +8,7 @@ public enum AccountPositionType {
     OPENING_AN_ACCOUNT("Открытие счета"),
     ENTERING_METER_READINGS("Передача показания прибора учета"),
     RATE_CHANGE("Смена тарифа"),
-    PAYMENT("Оплата счета");
+    PAYMENT("Оплата услуг");
 
     private final String message;
 
